@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Baulücken-Werkstatt – Aufriss und Grundriss entwerfen</title>
+<style>
+:root{--papier:#FBFAF7;--flaeche:#E2E6E3;--tusche:#16283A;--linie:#C7CCC9;--blau:#1F6FB2;--rot:#C0392B;--grau:#5C6872;--bestand:#D5D9DB}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--flaeche);color:var(--tusche);font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blau);outline-offset:2px}
+.app{height:100dvh;display:flex;flex-direction:column}
+header{background:var(--papier);border-bottom:2px solid var(--tusche);display:flex;align-items:center;gap:1rem;padding:.5rem .9rem;flex-wrap:wrap}
+h1{margin:0;font-size:1rem;font-weight:600;letter-spacing:-.012em;flex:1 1 14rem}
+h1 span{display:block;font-size:.72rem;font-weight:400;color:var(--grau)}
+.tabs{display:flex}
+.tab{border:1px solid var(--tusche);background:transparent;margin-left:-1px;padding:.34rem .75rem;font-size:.82rem;cursor:pointer}
+.tab:first-child{margin-left:0}
+.tab.aktiv{background:var(--tusche);color:var(--papier)}
+.werkzeuge{display:flex;gap:.45rem;flex-wrap:wrap}
+.werkzeuge button{border:1px solid var(--linie);background:#fff;padding:.34rem .7rem;font-size:.82rem;cursor:pointer}
+.werkzeuge button:hover{border-color:var(--tusche)}
+main{flex:1;display:grid;grid-template-columns:300px 1fr 260px;min-height:0}
+aside{background:var(--papier);overflow-y:auto;padding:.8rem .9rem 2rem}
+aside.links{border-right:1px solid var(--linie)}
+aside.rechts{border-left:1px solid var(--linie)}
+details{border-top:1px solid var(--linie)}
+details:first-of-type{border-top:0}
+summary{padding:.55rem 0;font-size:.88rem;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--grau);font-weight:400}
+details[open] summary::after{content:"–"}
+.feld{margin:.45rem 0}
+.feld-kopf{display:flex;justify-content:space-between;font-size:.8rem}
+.feld-kopf .wert{color:var(--grau);font-variant-numeric:tabular-nums}
+.feld input[type=range]{width:100%;accent-color:var(--blau)}
+.feld select{width:100%;border:1px solid var(--linie);background:#fff;padding:.28rem .35rem;font-size:.82rem}
+.feld input[type=color]{width:100%;height:1.9rem;border:1px solid var(--linie);background:#fff;padding:2px}
+.feld label{font-size:.8rem}
+.feld-check{display:flex;align-items:center;gap:.45rem}
+.feld-check input{accent-color:var(--blau)}
+.gruppe-titel{font-size:.78rem;color:var(--grau);margin:.7rem 0 .2rem}
+.kasten{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;padding-bottom:.7rem}
+.modul{border:1px solid var(--linie);background:#fff;padding:.25rem .2rem .3rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.1rem;font-size:.7rem;line-height:1.2;text-align:center}
+.modul canvas{width:52px;height:52px}
+.modul:hover{border-color:var(--tusche)}
+.modul.aktiv{border-color:var(--blau);box-shadow:inset 0 0 0 1px var(--blau);color:var(--blau)}
+.buehne{position:relative;min-height:0;background:#CBD5D8}
+canvas#blatt{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.hinweis{position:absolute;left:14px;bottom:14px;right:14px;max-width:36rem;background:rgba(251,250,247,.95);border:1px solid var(--linie);border-left:3px solid var(--blau);padding:.5rem .8rem;font-size:.82rem}
+.kw{display:grid;grid-template-columns:1fr auto;gap:.18rem .7rem;font-size:.82rem;margin:0 0 .8rem}
+.kw dt{color:var(--grau)}
+.kw dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.pruef{font-size:.8rem;margin:0;padding-left:1rem}
+.pruef li{margin-bottom:.45rem}
+.pruef .gut{color:#2E6B4F}
+aside.rechts h2{font-size:.86rem;margin:.2rem 0 .5rem}
+.dialog{position:fixed;inset:0;background:rgba(22,40,58,.45);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:20}
+.dialog[hidden]{display:none}
+.dialog-inhalt{background:var(--papier);border:1px solid var(--tusche);padding:1.1rem 1.2rem;max-width:36rem;width:100%;max-height:88vh;overflow-y:auto}
+.dialog h2{margin:0 0 .4rem;font-size:1rem}
+.dialog p,.dialog li{font-size:.86rem}
+.dialog textarea{width:100%;border:1px solid var(--linie);padding:.5rem;font-size:.72rem;font-family:ui-monospace,Menlo,monospace}
+.knoepfe{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem}
+.knoepfe button{border:1px solid var(--tusche);background:var(--tusche);color:var(--papier);padding:.4rem .8rem;font-size:.84rem;cursor:pointer}
+.knoepfe button.still{background:transparent;color:var(--tusche);border-color:var(--linie)}
+.meldung{min-height:1.2em;color:var(--blau);font-size:.82rem}
+@media (max-width:1100px){main{grid-template-columns:270px 1fr}aside.rechts{display:none}}
+@media (max-width:760px){main{grid-template-columns:1fr;grid-template-rows:55vh auto}aside.links{order:2;border-right:0;border-top:1px solid var(--linie)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Baulücken-Werkstatt<span>Eine Lücke im Straßenbild schließen: Fassade und Erdgeschoss entwerfen</span></h1>
+    <nav class="tabs" aria-label="Zeichnung">
+      <button class="tab aktiv" type="button" data-ansicht="aufriss">Aufriss</button>
+      <button class="tab" type="button" data-ansicht="grundriss">Grundriss</button>
+    </nav>
+    <div class="werkzeuge">
+      <button type="button" id="btnZurueck">Rückgängig</button>
+      <button type="button" id="btnBild">Bild speichern</button>
+      <button type="button" id="btnCode">Entwurf teilen</button>
+      <button type="button" id="btnHilfe">Hilfe</button>
+    </div>
+  </header>
+  <main>
+    <aside class="links" id="links"></aside>
+    <div class="buehne">
+      <canvas id="blatt" tabindex="0" aria-label="Zeichenfläche"></canvas>
+      <div class="hinweis" id="hinweis"></div>
+    </div>
+    <aside class="rechts">
+      <h2>Kennwerte</h2>
+      <dl class="kw" id="kennwerte"></dl>
+      <h2>Prüffragen an den Entwurf</h2>
+      <ul class="pruef" id="pruef"></ul>
+    </aside>
+  </main>
+</div>
+
+<div id="dlgCode" class="dialog" hidden>
+  <div class="dialog-inhalt">
+    <h2>Entwurf teilen</h2>
+    <p>Der Code enthält den ganzen Entwurf: Lücke, Nachbarn, Fassade und Grundriss. Kopiere ihn in dein Portfolio oder in den Kursordner, oder füge einen Code ein und lade ihn.</p>
+    <textarea id="code" rows="5" spellcheck="false"></textarea>
+    <p class="meldung" id="codeMeldung"></p>
+    <div class="knoepfe">
+      <button type="button" id="btnKopieren">Code kopieren</button>
+      <button type="button" id="btnLaden">Code laden</button>
+      <button type="button" class="still" id="btnCodeZu">Schließen</button>
+    </div>
+  </div>
+</div>
+<div id="dlgHilfe" class="dialog" hidden>
+  <div class="dialog-inhalt">
+    <h2>So arbeitest du</h2>
+    <ul>
+      <li><b>Lücke eingeben:</b> Links unter „Baulücke“ und „Nachbarn“ die Maße deiner Lücke eintragen, so wie auf Bogen C notiert. Geschätzte Werte später im Portfolio mit ≈ kennzeichnen.</li>
+      <li><b>Fassade gestalten:</b> Unter „Neubau“ Geschosse, Achsen, Dach und Material festlegen. Dann im Baukasten ein Modul wählen und auf ein Feld der Fassade tippen. Ein zweiter Tipp mit demselben Modul macht das Feld wieder zur Wand.</li>
+      <li><b>Grundriss zeichnen:</b> Im Grundriss Wände durch Ziehen setzen, Fenster und Türen auf eine Wand tippen, Treppen als Rechteck aufziehen, Möbel einsetzen und mit „Drehen“ ausrichten. Die Öffnungen der Straßenseite kommen automatisch aus dem Erdgeschoss der Fassade.</li>
+      <li><b>Prüfen:</b> Rechts stehen Kennwerte und Fragen an den Entwurf, zum Beispiel wie die Traufhöhe an die Nachbarn anschließt. Sie sind keine Bewertung, sondern Anlass zum Begründen.</li>
+      <li><b>Festhalten:</b> „Bild speichern“ legt die Zeichnung in hoher Auflösung ab. „Entwurf teilen“ erzeugt einen Code, mit dem der Stand später weiterbearbeitet werden kann.</li>
+    </ul>
+    <div class="knoepfe"><button type="button" id="btnHilfeZu">Schließen</button></div>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   Baulücken-Werkstatt · Aufriss und Grundriss als Baukasten
+   Reines JavaScript, offline lauffähig
+   =================================================================== */
+const TUSCHE = '#16283A', ROT = '#C0392B', BLAU = '#1F6FB2', PAPIER = '#FBFAF7';
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const m2 = (v) => v.toFixed(2).replace('.', ',');
+
+/* ---------- Zustand ---------- */
+const START = {
+  luecke: { breite: 9.5, tiefe: 12, front: 'S' },
+  links: { geschosse: 4, traufe: 13.2, first: 17.0, dach: 'sattel' },
+  rechts: { geschosse: 3, traufe: 10.6, first: 11.2, dach: 'flach' },
+  bau: { geschosse: 4, egH: 3.8, ogH: 3.0, sockel: 0.4, achsen: 3, dach: 'flach', dachH: 3.5,
+    material: 'putz', farbe: '#E3DCCB', werk: '#F4F0E6', gesims: true, sockelBand: true },
+  felder: { '0,0': 'laden', '0,1': 'tuer', '0,2': 'laden', '1,0': 'fenster', '1,1': 'fenster', '1,2': 'fenster',
+    '2,0': 'balkon', '2,1': 'fenster', '2,2': 'balkon', '3,0': 'fenster', '3,1': 'fenster', '3,2': 'fenster' },
+  plan: { waende: [], oeff: [], treppen: [], moebel: [], raeume: [] }
+};
+let Z = JSON.parse(JSON.stringify(START));
+let ansicht = 'aufriss', modulWahl = 'fenster', werkzeug = 'wand-innen', moebelWahl = 'tisch4', letzterMoebel = -1;
+const verlauf = [];
+function merken() { verlauf.push(JSON.stringify(Z)); if (verlauf.length > 60) verlauf.shift(); }
+function standardPlan() {
+  const b = Z.luecke.breite, t = Z.luecke.tiefe;
+  Z.plan.waende = [{ x0: 0, z0: t, x1: b, z1: t, art: 'aussen' }];
+}
+standardPlan();
+
+/* ---------- Module der Fassade ---------- */
+const MODULE = [
+  ['wand', 'Wand'], ['fenster', 'Fenster'], ['fenster2', 'Doppelfenster'], ['quer', 'liegendes Fenster'],
+  ['bogen', 'Rundbogen'], ['franz', 'bodentief'], ['band', 'Bandfenster'], ['balkon', 'Balkon'],
+  ['loggia', 'Loggia'], ['erker', 'Erker'], ['tuer', 'Hauseingang'], ['laden', 'Schaufenster'], ['tor', 'Durchfahrt']
+];
+const MOEBEL = [
+  ['tisch4', 'Tisch'], ['rundtisch', 'runder Tisch'], ['sofa', 'Sofa'], ['sessel', 'Sessel'], ['bett', 'Bett'],
+  ['bett2', 'Doppelbett'], ['schrank', 'Schrank'], ['regal', 'Regal'], ['kueche', 'Küchenzeile'], ['herd', 'Herd'],
+  ['spuele', 'Spüle'], ['kuehl', 'Kühlschrank'], ['wc', 'WC'], ['wb', 'Waschbecken'], ['dusche', 'Dusche'],
+  ['wanne', 'Wanne'], ['theke', 'Theke'], ['pflanze', 'Pflanze']
+];
+const WERKZEUGE = [['wand-aussen', 'Außenwand'], ['wand-innen', 'Innenwand'], ['fenster', 'Fenster'], ['tuer', 'Tür'],
+  ['treppe', 'Treppe'], ['moebel', 'Möbel'], ['raum', 'Raumname'], ['auswahl', 'Drehen'], ['radierer', 'Löschen']];
+
+/* ---------- Geometrie der Fassade ---------- */
+function hoehen() {
+  const b = Z.bau, h = [b.sockel];
+  for (let e = 0; e < b.geschosse; e++) h.push(h[e] + (e === 0 ? b.egH : b.ogH));
+  return h;
+}
+function traufe() { const h = hoehen(); return h[h.length - 1] + (Z.bau.dach === 'flach' ? 0.6 : 0); }
+function firstH() { return Z.bau.dach === 'flach' ? traufe() : hoehen()[Z.bau.geschosse] + Z.bau.dachH; }
+function feldRect(e, a) {
+  const h = hoehen(), B = Z.luecke.breite, n = Z.bau.achsen;
+  return { x0: B * a / n, x1: B * (a + 1) / n, y0: h[e], y1: h[e + 1], e, a };
+}
+
+/* ---------- Zeichenhilfen ---------- */
+function rechteck(ctx, x, y, w, h, fill, stroke, lw) {
+  ctx.beginPath(); ctx.rect(x, y, w, h);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); }
+}
+function linie(ctx, x1, y1, x2, y2, farbe, lw, strich) {
+  ctx.save(); ctx.strokeStyle = farbe; ctx.lineWidth = lw || 1;
+  if (strich) ctx.setLineDash(strich);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore();
+}
+function text(ctx, s, x, y, o) {
+  o = o || {};
+  ctx.save();
+  ctx.font = (o.bold ? '600 ' : '400 ') + (o.size || 12) * o.d + 'px ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial';
+  ctx.textAlign = o.align || 'center'; ctx.textBaseline = 'middle';
+  if (o.bg) { const w = ctx.measureText(s).width; ctx.fillStyle = o.bg; ctx.fillRect(x - (o.align === 'left' ? 0 : o.align === 'right' ? w : w / 2) - 3 * o.d, y - 8 * o.d, w + 6 * o.d, 16 * o.d); }
+  ctx.fillStyle = o.farbe || TUSCHE;
+  if (o.rot) { ctx.translate(x, y); ctx.rotate(-Math.PI / 2); ctx.fillText(s, 0, 0); } else ctx.fillText(s, x, y);
+  ctx.restore();
+}
+function pfeil(ctx, x, y, dx, dy, d) {
+  const l = 7 * d, a = Math.atan2(dy, dx);
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - l * Math.cos(a - 0.35), y - l * Math.sin(a - 0.35)); ctx.lineTo(x - l * Math.cos(a + 0.35), y - l * Math.sin(a + 0.35)); ctx.closePath(); ctx.fill();
+}
+function mass(ctx, x1, y1, x2, y2, s, d) {
+  ctx.save(); ctx.strokeStyle = TUSCHE; ctx.fillStyle = TUSCHE; ctx.lineWidth = d;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  const dx = x2 - x1, dy = y2 - y1, l = Math.hypot(dx, dy) || 1;
+  pfeil(ctx, x1, y1, -dx / l, -dy / l, d); pfeil(ctx, x2, y2, dx / l, dy / l, d);
+  if (Math.abs(dx) >= Math.abs(dy)) text(ctx, s, (x1 + x2) / 2, (y1 + y2) / 2 - 9 * d, { size: 11, d, bg: 'rgba(251,250,247,.9)' });
+  else text(ctx, s, (x1 + x2) / 2 - 9 * d, (y1 + y2) / 2, { size: 11, d, rot: true, bg: 'rgba(251,250,247,.9)' });
+  ctx.restore();
+}
+function kote(ctx, x, y, s, d) {
+  ctx.save(); ctx.strokeStyle = TUSCHE; ctx.fillStyle = TUSCHE; ctx.lineWidth = d;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 44 * d, y); ctx.stroke();
+  const cx = x - 12 * d, k = 6 * d;
+  ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(cx - k, y - k * 1.5); ctx.lineTo(cx + k, y - k * 1.5); ctx.closePath();
+  if (s.charAt(0) === '-') ctx.stroke(); else ctx.fill();
+  text(ctx, s, x - 26 * d, y - 9 * d, { size: 10, d, bold: true, align: 'right' });
+  ctx.restore();
+}
+
+/* ---------- Ein Fassadenmodul in ein Feld zeichnen ---------- */
+/* T: Umrechnung Meter -> Pixel, r: Feld in Metern, glas/werk: Farben */
+function zeichneModul(ctx, typ, r, T, farben, d, egFeld) {
+  const X = T.X, Y = T.Y, k = T.k;
+  const fw = r.x1 - r.x0, gh = r.y1 - r.y0, cx = (r.x0 + r.x1) / 2;
+  const glas = '#C9D6DF', glasDunkel = '#9FB2C0', werk = farben.werk, dunkel = '#5E6B77';
+  const fenster = (x0, y0, w, h, sprossen) => {
+    rechteck(ctx, X(x0 - 0.1), Y(y0 + h + 0.1), (w + 0.2) * k, (h + 0.2) * k, werk, dunkel, 0.8 * d);
+    rechteck(ctx, X(x0), Y(y0 + h), w * k, h * k, glas, dunkel, 0.9 * d);
+    if (sprossen !== false) {
+      linie(ctx, X(x0 + w / 2), Y(y0), X(x0 + w / 2), Y(y0 + h), dunkel, 0.8 * d);
+      if (h > 1.2) linie(ctx, X(x0), Y(y0 + h * 0.72), X(x0 + w), Y(y0 + h * 0.72), dunkel, 0.8 * d);
+    }
+    rechteck(ctx, X(x0 - 0.16), Y(y0), (w + 0.32) * k, 0.1 * k, werk, dunkel, 0.8 * d);
+  };
+  const gel = (x0, y0, w, h) => {
+    rechteck(ctx, X(x0), Y(y0 + h), w * k, h * k, null, dunkel, 0.9 * d);
+    const n = Math.max(3, Math.round(w / 0.14));
+    for (let i = 1; i < n; i++) linie(ctx, X(x0 + w * i / n), Y(y0), X(x0 + w * i / n), Y(y0 + h), dunkel, 0.6 * d);
+  };
+  const bruest = egFeld ? 0.3 : 0.9;
+  switch (typ) {
+    case 'fenster': { const w = Math.min(1.25, fw * 0.5), h = Math.min(gh * 0.55, gh - bruest - 0.5); fenster(cx - w / 2, r.y0 + bruest, w, h); break; }
+    case 'fenster2': { const w = Math.min(0.95, fw * 0.3), h = Math.min(gh * 0.55, gh - bruest - 0.5); fenster(cx - w - 0.15, r.y0 + bruest, w, h); fenster(cx + 0.15, r.y0 + bruest, w, h); break; }
+    case 'quer': { const w = fw * 0.72, h = Math.max(0.6, gh * 0.33); fenster(cx - w / 2, r.y0 + gh * 0.4, w, h); break; }
+    case 'band': { const h = Math.max(0.8, gh * 0.38); rechteck(ctx, X(r.x0 + 0.05), Y(r.y0 + gh * 0.36 + h), (fw - 0.1) * k, h * k, glas, dunkel, 0.9 * d);
+      linie(ctx, X(cx), Y(r.y0 + gh * 0.36), X(cx), Y(r.y0 + gh * 0.36 + h), dunkel, 0.8 * d);
+      rechteck(ctx, X(r.x0), Y(r.y0 + gh * 0.36), fw * k, 0.08 * k, werk, dunkel, 0.6 * d); break; }
+    case 'bogen': {
+      const w = Math.min(1.2, fw * 0.48), h = Math.min(gh * 0.62, gh - bruest - 0.4), y0 = r.y0 + bruest, rr = w / 2, ys = y0 + h - rr;
+      ctx.beginPath(); ctx.moveTo(X(cx - w / 2 - 0.12), Y(y0)); ctx.lineTo(X(cx - w / 2 - 0.12), Y(ys));
+      ctx.arc(X(cx), Y(ys), (rr + 0.12) * k, Math.PI, 0); ctx.lineTo(X(cx + w / 2 + 0.12), Y(y0)); ctx.closePath();
+      ctx.fillStyle = werk; ctx.fill(); ctx.strokeStyle = dunkel; ctx.lineWidth = 0.8 * d; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(X(cx - w / 2), Y(y0)); ctx.lineTo(X(cx - w / 2), Y(ys)); ctx.arc(X(cx), Y(ys), rr * k, Math.PI, 0); ctx.lineTo(X(cx + w / 2), Y(y0)); ctx.closePath();
+      ctx.fillStyle = glas; ctx.fill(); ctx.stroke();
+      linie(ctx, X(cx), Y(y0), X(cx), Y(ys + rr), dunkel, 0.8 * d);
+      rechteck(ctx, X(cx - 0.12), Y(ys + rr + 0.2), 0.24 * k, 0.3 * k, werk, dunkel, 0.8 * d);
+      rechteck(ctx, X(cx - w / 2 - 0.18), Y(y0), (w + 0.36) * k, 0.1 * k, werk, dunkel, 0.8 * d); break; }
+    case 'franz': { const w = Math.min(1.1, fw * 0.42), h = gh * 0.78; fenster(cx - w / 2, r.y0 + 0.05, w, h); gel(cx - w / 2, r.y0 + 0.05, w, 0.95); break; }
+    case 'balkon': {
+      const w = Math.min(1.0, fw * 0.36), h = Math.min(2.35, gh - 0.4); fenster(cx - w / 2, r.y0 + 0.05, w, h);
+      const bw = Math.min(fw - 0.3, 3.2);
+      rechteck(ctx, X(cx - bw / 2), Y(r.y0 + 0.05), bw * k, 0.22 * k, werk, dunkel, 0.9 * d);
+      rechteck(ctx, X(cx - bw / 2), Y(r.y0 - 0.17), bw * k, 0.06 * k, 'rgba(22,40,58,.25)', null);
+      gel(cx - bw / 2 + 0.05, r.y0 + 0.05, bw - 0.1, 1.0); break; }
+    case 'loggia': {
+      const w = fw * 0.8, h = gh * 0.9;
+      rechteck(ctx, X(cx - w / 2), Y(r.y0 + h), w * k, h * k, '#A8B1B6', dunkel, 0.9 * d);
+      const iw = Math.min(1.0, w * 0.4); rechteck(ctx, X(cx - iw / 2), Y(r.y0 + Math.min(2.3, h - 0.2)), iw * k, Math.min(2.3, h - 0.2) * k, glasDunkel, dunkel, 0.8 * d);
+      rechteck(ctx, X(cx - w / 2), Y(r.y0 + h), w * k, 0.12 * k, 'rgba(22,40,58,.35)', null);
+      gel(cx - w / 2 + 0.05, r.y0, w - 0.1, 1.0); break; }
+    case 'erker': {
+      const w = fw * 0.86;
+      rechteck(ctx, X(cx - w / 2 + 0.18), Y(r.y1 - 0.05), w * k, (gh - 0.05) * k, 'rgba(22,40,58,.18)', null);
+      rechteck(ctx, X(cx - w / 2), Y(r.y1), w * k, gh * k, farben.farbe, TUSCHE, 1.3 * d);
+      const fw2 = w * 0.62, h = gh * 0.52; fenster(cx - fw2 / 2, r.y0 + 0.85, fw2, h);
+      rechteck(ctx, X(cx - w / 2 - 0.1), Y(r.y1), (w + 0.2) * k, 0.18 * k, werk, dunkel, 0.8 * d); break; }
+    case 'tuer': {
+      const w = Math.min(1.25, fw * 0.5), h = Math.min(2.5, gh - 0.4), y0 = Math.max(0, r.y0 - Z.bau.sockel);
+      rechteck(ctx, X(cx - w / 2 - 0.14), Y(y0 + h + 0.55), (w + 0.28) * k, (h + 0.55) * k, werk, dunkel, 0.8 * d);
+      rechteck(ctx, X(cx - w / 2), Y(y0 + h), w * k, h * k, '#6B5A48', dunkel, 0.9 * d);
+      rechteck(ctx, X(cx - w / 2), Y(y0 + h + 0.45), w * k, 0.38 * k, glas, dunkel, 0.8 * d);
+      if (Z.bau.sockel > 0.1) for (let i = 0; i < Math.round(Z.bau.sockel / 0.17); i++) rechteck(ctx, X(cx - w / 2 - 0.3 + i * 0.06), Y(0.17 * (i + 1)), (w + 0.6 - i * 0.12) * k, 0.17 * k, werk, dunkel, 0.7 * d);
+      break; }
+    case 'laden': {
+      const w = fw * 0.84, y0 = Math.max(0.05, r.y0 - Z.bau.sockel + 0.1), h = Math.min(gh * 0.78, r.y1 - y0 - 0.5);
+      rechteck(ctx, X(cx - w / 2 - 0.1), Y(y0 + h + 0.42), (w + 0.2) * k, 0.34 * k, '#4E5D4C', dunkel, 0.8 * d);
+      rechteck(ctx, X(cx - w / 2), Y(y0 + h), w * k, h * k, glas, dunkel, 1 * d);
+      for (let i = 1; i < 3; i++) linie(ctx, X(cx - w / 2 + w * i / 3), Y(y0), X(cx - w / 2 + w * i / 3), Y(y0 + h), dunkel, 0.8 * d);
+      break; }
+    case 'tor': {
+      const w = Math.min(3.2, fw * 0.88), h = Math.min(4.0, r.y1 - 0.3), rr = w / 2, ys = h - rr * 0.45;
+      ctx.beginPath(); ctx.moveTo(X(cx - w / 2), Y(0)); ctx.lineTo(X(cx - w / 2), Y(ys));
+      ctx.quadraticCurveTo(X(cx), Y(h + 0.2), X(cx + w / 2), Y(ys)); ctx.lineTo(X(cx + w / 2), Y(0)); ctx.closePath();
+      ctx.fillStyle = '#58636B'; ctx.fill(); ctx.strokeStyle = TUSCHE; ctx.lineWidth = 1.1 * d; ctx.stroke(); break; }
+    default: break;
+  }
+}
+
+/* ---------- Aufriss: Straßenwand mit Nachbarn ---------- */
+function zeichneAufriss(ctx, W, H, d) {
+  const B = Z.luecke.breite, NB = 7.5;
+  const hMax = Math.max(Z.links.first, Z.rechts.first, firstH()) + 2.5;
+  const x0 = -NB - 3.2, x1 = B + NB + 1.2, y0 = -1.6, y1 = hMax;
+  const k = Math.min((W - 60 * d) / (x1 - x0), (H - 130 * d) / (y1 - y0));
+  const ox = W / 2 - k * (x0 + x1) / 2, oy = H / 2 + 20 * d + k * (y0 + y1) / 2;
+  const T = { k, X: (x) => ox + k * x, Y: (y) => oy - k * y };
+  const X = T.X, Y = T.Y;
+  ctx.fillStyle = PAPIER; ctx.fillRect(0, 0, W, H);
+  // Nachbarn als Bestand
+  const nachbar = (n, xa, xb) => {
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(X(xa), Y(0)); ctx.lineTo(X(xa), Y(n.traufe)); ctx.lineTo(X(xb), Y(n.traufe)); ctx.lineTo(X(xb), Y(0)); ctx.closePath();
+    ctx.fillStyle = '#D5D9DB'; ctx.fill(); ctx.strokeStyle = '#7C868E'; ctx.lineWidth = 1.1 * d; ctx.stroke();
+    if (n.dach === 'sattel' && n.first > n.traufe + 0.3) {
+      ctx.beginPath(); ctx.moveTo(X(xa), Y(n.traufe)); ctx.lineTo(X(xa), Y(n.first)); ctx.lineTo(X(xb), Y(n.first)); ctx.lineTo(X(xb), Y(n.traufe)); ctx.closePath();
+      ctx.fillStyle = '#BCC3C7'; ctx.fill(); ctx.stroke();
+    }
+    const gh = n.traufe / n.geschosse;
+    for (let e = 0; e < n.geschosse; e++) for (let i = 0; i < 3; i++) {
+      const cx = xa + (xb - xa) * (i + 0.5) / 3, yb = e * gh + gh * 0.3;
+      rechteck(ctx, X(cx - 0.55), Y(yb + gh * 0.5), 1.1 * k, gh * 0.5 * k, '#EEF0F1', '#9AA3A8', 0.8 * d);
+    }
+    ctx.restore();
+  };
+  nachbar(Z.links, -NB, 0);
+  nachbar(Z.rechts, B, B + NB);
+  text(ctx, 'Bestand', X(-NB / 2), Y(-0.9), { size: 11, d, farbe: '#5C6872' });
+  text(ctx, 'Bestand', X(B + NB / 2), Y(-0.9), { size: 11, d, farbe: '#5C6872' });
+  // Neubau: Wand
+  const h = hoehen(), top = h[Z.bau.geschosse];
+  rechteck(ctx, X(0), Y(top), B * k, top * k, Z.bau.farbe, null);
+  materialMuster(ctx, T, 0, B, Z.bau.sockel, top, d);
+  if (Z.bau.sockelBand) rechteck(ctx, X(0), Y(Z.bau.sockel), B * k, Z.bau.sockel * k, shade(Z.bau.farbe, 0.8), '#5E6B77', 0.8 * d);
+  // Dach
+  const fH = firstH();
+  if (Z.bau.dach === 'flach') {
+    rechteck(ctx, X(-0.05), Y(top + 0.6), (B + 0.1) * k, 0.6 * k, Z.bau.werk, TUSCHE, 1 * d);
+  } else {
+    ctx.beginPath();
+    if (Z.bau.dach === 'mansard') {
+      ctx.moveTo(X(-0.3), Y(top - 0.15)); ctx.lineTo(X(-0.1), Y(top + Z.bau.dachH * 0.62)); ctx.lineTo(X(B + 0.1), Y(top + Z.bau.dachH * 0.62)); ctx.lineTo(X(B + 0.3), Y(top - 0.15));
+      ctx.closePath(); ctx.fillStyle = '#6B6763'; ctx.fill(); ctx.strokeStyle = TUSCHE; ctx.lineWidth = 1 * d; ctx.stroke();
+      rechteck(ctx, X(-0.1), Y(fH), (B + 0.2) * k, (fH - top - Z.bau.dachH * 0.62) * k, '#817C77', TUSCHE, 1 * d);
+    } else {
+      rechteck(ctx, X(-0.35), Y(fH), (B + 0.7) * k, (fH - top + 0.15) * k, '#8B4A35', TUSCHE, 1 * d);
+      for (let y = top + 0.3; y < fH - 0.1; y += 0.35) linie(ctx, X(-0.35), Y(y), X(B + 0.35), Y(y), 'rgba(0,0,0,.18)', 0.7 * d);
+    }
+  }
+  // Gesimse
+  if (Z.bau.gesims) for (let e = 1; e < Z.bau.geschosse; e++) rechteck(ctx, X(-0.15), Y(h[e] + 0.1), (B + 0.3) * k, 0.2 * k, Z.bau.werk, '#5E6B77', 0.8 * d);
+  if (Z.bau.dach !== 'flach') rechteck(ctx, X(-0.3), Y(top + 0.05), (B + 0.6) * k, 0.3 * k, Z.bau.werk, '#5E6B77', 0.9 * d);
+  // Module
+  for (let e = 0; e < Z.bau.geschosse; e++) for (let a = 0; a < Z.bau.achsen; a++) {
+    const typ = Z.felder[e + ',' + a] || 'wand';
+    zeichneModul(ctx, typ, feldRect(e, a), T, Z.bau, d, e === 0);
+  }
+  // Achsraster und Umriss
+  ctx.save(); ctx.setLineDash([4 * d, 4 * d]); ctx.strokeStyle = 'rgba(31,111,178,.35)'; ctx.lineWidth = 0.8 * d;
+  for (let a = 1; a < Z.bau.achsen; a++) { const x = B * a / Z.bau.achsen; ctx.beginPath(); ctx.moveTo(X(x), Y(0)); ctx.lineTo(X(x), Y(top)); ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = TUSCHE; ctx.lineWidth = 1.8 * d; ctx.strokeRect(X(0), Y(top), B * k, top * k);
+  // Traufkanten der Nachbarn quer durch die Lücke
+  linie(ctx, X(-NB), Y(Z.links.traufe), X(B), Y(Z.links.traufe), ROT, 1 * d, [8 * d, 5 * d]);
+  linie(ctx, X(0), Y(Z.rechts.traufe), X(B + NB), Y(Z.rechts.traufe), ROT, 1 * d, [8 * d, 5 * d]);
+  text(ctx, 'Traufe links', X(-NB * 0.5), Y(Z.links.traufe) - 9 * d, { size: 10, d, farbe: ROT, bg: 'rgba(251,250,247,.85)' });
+  text(ctx, 'Traufe rechts', X(B + NB * 0.5), Y(Z.rechts.traufe) - 9 * d, { size: 10, d, farbe: ROT, bg: 'rgba(251,250,247,.85)' });
+  // Gelaende
+  linie(ctx, X(x0 + 0.5), Y(0), X(x1 - 0.2), Y(0), TUSCHE, 2 * d);
+  ctx.save(); ctx.beginPath(); ctx.rect(X(x0 + 0.5), Y(0), (x1 - x0 - 0.7) * k, 16 * d); ctx.clip();
+  ctx.strokeStyle = 'rgba(22,40,58,.35)'; ctx.lineWidth = d;
+  for (let x = X(x0); x < X(x1); x += 8 * d) { ctx.beginPath(); ctx.moveTo(x, Y(0)); ctx.lineTo(x - 16 * d, Y(0) + 16 * d); ctx.stroke(); }
+  ctx.restore();
+  // Bemassung und Koten
+  mass(ctx, X(0), Y(0) + 40 * d, X(B), Y(0) + 40 * d, m2(B) + ' m', d);
+  const xk = X(-NB) - 8 * d;
+  kote(ctx, xk, Y(0), '±0,00', d);
+  kote(ctx, xk, Y(traufe()), '+' + m2(traufe()), d);
+  if (Z.bau.dach !== 'flach') kote(ctx, xk, Y(fH), '+' + m2(fH), d);
+  const xm = X(B + NB) + 22 * d;
+  let ya = 0;
+  h.forEach(hh => { if (hh - ya < 0.05) return; mass(ctx, xm, Y(ya), xm, Y(hh), m2(hh - ya), d); ya = hh; });
+  // Titel
+  text(ctx, 'Aufriss der Straßenfassade', 24 * d, 24 * d, { size: 14, d, bold: true, align: 'left' });
+  text(ctx, 'Straßenfront nach ' + { N: 'Norden', O: 'Osten', S: 'Süden', W: 'Westen' }[Z.luecke.front] + '. Bestand grau, Neubau farbig, Achsraster blau gestrichelt.', 24 * d, 44 * d, { size: 11, d, farbe: '#5C6872', align: 'left' });
+  return T;
+}
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return 'rgb(' + Math.round(r * f) + ',' + Math.round(g * f) + ',' + Math.round(b * f) + ')';
+}
+function materialMuster(ctx, T, xa, xb, ya, yb, d) {
+  const X = T.X, Y = T.Y, m = Z.bau.material;
+  ctx.save(); ctx.beginPath(); ctx.rect(X(xa), Y(yb), (xb - xa) * T.k, (yb - ya) * T.k); ctx.clip();
+  ctx.strokeStyle = 'rgba(0,0,0,.14)'; ctx.lineWidth = 0.6 * d;
+  if (m === 'klinker') { let r = 0; for (let y = ya; y < yb; y += 0.25, r++) { linie(ctx, X(xa), Y(y), X(xb), Y(y), 'rgba(0,0,0,.14)', 0.6 * d); for (let x = xa + (r % 2) * 0.12; x < xb; x += 0.24) linie(ctx, X(x), Y(y), X(x), Y(y + 0.25), 'rgba(0,0,0,.1)', 0.5 * d); } }
+  else if (m === 'holz') { for (let x = xa; x < xb; x += 0.2) linie(ctx, X(x), Y(ya), X(x), Y(yb), 'rgba(0,0,0,.15)', 0.6 * d); }
+  else if (m === 'beton') { for (let y = ya; y < yb; y += 0.5) linie(ctx, X(xa), Y(y), X(xb), Y(y), 'rgba(0,0,0,.12)', 0.6 * d); for (let x = xa; x < xb; x += 2.5) linie(ctx, X(x), Y(ya), X(x), Y(yb), 'rgba(0,0,0,.12)', 0.6 * d); }
+  else if (m === 'glas') { for (let x = xa; x < xb; x += 1.25) linie(ctx, X(x), Y(ya), X(x), Y(yb), 'rgba(22,40,58,.35)', 0.9 * d); }
+  ctx.restore();
+}
+
+/* ---------- Grundriss ---------- */
+const WD = { aussen: 0.36, innen: 0.12, brand: 0.30 };
+function zeichneGrundriss(ctx, W, H, d) {
+  const B = Z.luecke.breite, Tf = Z.luecke.tiefe, NB = 6;
+  const x0 = -NB - 1.5, x1 = B + NB + 1.5, z0 = -5.2, z1 = Tf + 2.2;
+  const k = Math.min((W - 60 * d) / (x1 - x0), (H - 120 * d) / (z1 - z0));
+  const ox = W / 2 - k * (x0 + x1) / 2, oy = H / 2 + 15 * d + k * (z0 + z1) / 2;
+  const T = { k, X: (x) => ox + k * x, Y: (z) => oy - k * z };
+  const X = T.X, Y = T.Y;
+  ctx.fillStyle = PAPIER; ctx.fillRect(0, 0, W, H);
+  // Strasse und Gehweg
+  rechteck(ctx, X(x0 + 0.5), Y(0), (x1 - x0 - 1) * k, 2.2 * k, '#EEEFEC', null);
+  rechteck(ctx, X(x0 + 0.5), Y(-2.2), (x1 - x0 - 1) * k, 2.8 * k, '#DCDFDE', null);
+  linie(ctx, X(x0 + 0.5), Y(-2.2), X(x1 - 0.5), Y(-2.2), '#9AA3A8', d);
+  text(ctx, 'Gehweg', X(B / 2), Y(-1.1), { size: 10, d, farbe: '#5C6872' });
+  text(ctx, 'Straße', X(B / 2), Y(-3.7), { size: 10, d, farbe: '#5C6872' });
+  // Nachbarn schraffiert
+  [[-NB, 0], [B, B + NB]].forEach(q => {
+    ctx.save(); ctx.beginPath(); ctx.rect(X(q[0]), Y(Tf), (q[1] - q[0]) * k, Tf * k); ctx.fillStyle = '#E3E6E7'; ctx.fill(); ctx.clip();
+    ctx.strokeStyle = 'rgba(92,104,114,.35)'; ctx.lineWidth = d;
+    for (let x = X(q[0]) - Tf * k; x < X(q[1]); x += 9 * d) { ctx.beginPath(); ctx.moveTo(x, Y(0)); ctx.lineTo(x + Tf * k, Y(Tf)); ctx.stroke(); }
+    ctx.restore();
+    text(ctx, 'Nachbar, Bestand', X((q[0] + q[1]) / 2), Y(Tf / 2), { size: 10, d, farbe: '#5C6872', bg: 'rgba(227,230,231,.9)' });
+  });
+  // Raster
+  ctx.save(); ctx.strokeStyle = 'rgba(31,111,178,.10)'; ctx.lineWidth = 0.6 * d;
+  for (let x = 0; x <= B + 0.001; x += 0.5) { ctx.beginPath(); ctx.moveTo(X(x), Y(0)); ctx.lineTo(X(x), Y(Tf)); ctx.stroke(); }
+  for (let z = 0; z <= Tf + 0.001; z += 0.5) { ctx.beginPath(); ctx.moveTo(X(0), Y(z)); ctx.lineTo(X(B), Y(z)); ctx.stroke(); }
+  ctx.restore();
+  // Moebel zuerst, damit Waende darueber liegen
+  Z.plan.moebel.forEach((mb, i) => moebelSymbol(ctx, T, mb, d, i === letzterMoebel && werkzeug === 'auswahl'));
+  // Treppen
+  Z.plan.treppen.forEach(t => {
+    const xa = Math.min(t.x0, t.x1), xb = Math.max(t.x0, t.x1), za = Math.min(t.z0, t.z1), zb = Math.max(t.z0, t.z1);
+    rechteck(ctx, X(xa), Y(zb), (xb - xa) * k, (zb - za) * k, '#FFFFFF', TUSCHE, 0.9 * d);
+    const laengs = (zb - za) >= (xb - xa);
+    ctx.save(); ctx.strokeStyle = TUSCHE; ctx.lineWidth = 0.8 * d;
+    if (laengs) { for (let z = za + 0.28; z < zb; z += 0.28) { ctx.beginPath(); ctx.moveTo(X(xa), Y(z)); ctx.lineTo(X(xb), Y(z)); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(X((xa + xb) / 2), Y(za + 0.15)); ctx.lineTo(X((xa + xb) / 2), Y(zb - 0.3)); ctx.stroke(); ctx.fillStyle = TUSCHE; pfeil(ctx, X((xa + xb) / 2), Y(zb - 0.2), 0, -1, d); }
+    else { for (let x = xa + 0.28; x < xb; x += 0.28) { ctx.beginPath(); ctx.moveTo(X(x), Y(za)); ctx.lineTo(X(x), Y(zb)); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(X(xa + 0.15), Y((za + zb) / 2)); ctx.lineTo(X(xb - 0.3), Y((za + zb) / 2)); ctx.stroke(); ctx.fillStyle = TUSCHE; pfeil(ctx, X(xb - 0.2), Y((za + zb) / 2), 1, 0, d); }
+    ctx.restore();
+  });
+  // Brandwaende zu den Nachbarn
+  rechteck(ctx, X(-WD.brand), Y(Tf), WD.brand * k, Tf * k, '#2E3A46', null);
+  rechteck(ctx, X(B), Y(Tf), WD.brand * k, Tf * k, '#2E3A46', null);
+  // Strassenfassade aus dem Erdgeschoss der Fassade
+  rechteck(ctx, X(0), Y(WD.aussen), B * k, WD.aussen * k, '#2E3A46', null);
+  for (let a = 0; a < Z.bau.achsen; a++) {
+    const typ = Z.felder['0,' + a] || 'wand', r = feldRect(0, a), fw = r.x1 - r.x0, cx = (r.x0 + r.x1) / 2;
+    let w = 0;
+    if (typ === 'fenster' || typ === 'bogen') w = Math.min(1.25, fw * 0.5);
+    else if (typ === 'fenster2') w = Math.min(0.95, fw * 0.3) * 2 + 0.3;
+    else if (typ === 'quer' || typ === 'band') w = fw * 0.72;
+    else if (typ === 'franz' || typ === 'balkon') w = Math.min(1.1, fw * 0.42);
+    else if (typ === 'tuer') w = Math.min(1.25, fw * 0.5);
+    else if (typ === 'laden') w = fw * 0.84;
+    else if (typ === 'tor') w = Math.min(3.2, fw * 0.88);
+    else if (typ === 'loggia') w = fw * 0.8;
+    if (!w) continue;
+    rechteck(ctx, X(cx - w / 2), Y(WD.aussen), w * k, WD.aussen * k, PAPIER, TUSCHE, 0.8 * d);
+    if (typ === 'tuer') {
+      linie(ctx, X(cx - w / 2), Y(WD.aussen), X(cx - w / 2), Y(WD.aussen + w), TUSCHE, 1.4 * d);
+      ctx.save(); ctx.setLineDash([3 * d, 3 * d]); ctx.strokeStyle = TUSCHE; ctx.lineWidth = 0.7 * d;
+      ctx.beginPath(); ctx.arc(X(cx - w / 2), Y(WD.aussen), w * k, -Math.PI / 2, 0); ctx.stroke(); ctx.restore();
+    } else if (typ !== 'tor' && typ !== 'loggia') {
+      linie(ctx, X(cx - w / 2), Y(WD.aussen / 2), X(cx + w / 2), Y(WD.aussen / 2), TUSCHE, 1.2 * d);
+    }
+  }
+  // Waende der Schuelerinnen und Schueler
+  Z.plan.waende.forEach((w, i) => wandZeichnen(ctx, T, w, i, d));
+  // Raumnamen
+  Z.plan.raeume.forEach(r => text(ctx, r.name, X(r.x), Y(r.z), { size: 12, d, bold: true, bg: 'rgba(251,250,247,.85)' }));
+  // Bemassung, Nordpfeil, Massstab, Titel
+  mass(ctx, X(0), Y(-5.0) + 22 * d, X(B), Y(-5.0) + 22 * d, m2(B) + ' m', d);
+  mass(ctx, X(B + NB) + 18 * d, Y(0), X(B + NB) + 18 * d, Y(Tf), m2(Tf) + ' m', d);
+  const nr = { S: 0, W: Math.PI / 2, N: Math.PI, O: -Math.PI / 2 }[Z.luecke.front];
+  const nx = Math.sin(nr), ny = -Math.cos(nr), cx2 = W - 50 * d, cy2 = 56 * d;
+  ctx.save(); ctx.strokeStyle = TUSCHE; ctx.fillStyle = TUSCHE; ctx.lineWidth = 1.6 * d;
+  ctx.beginPath(); ctx.moveTo(cx2 - nx * 18 * d, cy2 - ny * 18 * d); ctx.lineTo(cx2 + nx * 18 * d, cy2 + ny * 18 * d); ctx.stroke();
+  pfeil(ctx, cx2 + nx * 22 * d, cy2 + ny * 22 * d, nx, ny, d);
+  text(ctx, 'N', cx2 + nx * 32 * d, cy2 + ny * 32 * d, { size: 11, d, bold: true });
+  ctx.restore();
+  const bx = 24 * d, by = H - 28 * d;
+  for (let i = 0; i < 5; i++) { rechteck(ctx, bx + i * k, by, k, 6 * d, i % 2 ? PAPIER : TUSCHE, TUSCHE, d); }
+  text(ctx, '0', bx, by + 15 * d, { size: 10, d }); text(ctx, '5 m', bx + 5 * k, by + 15 * d, { size: 10, d });
+  text(ctx, 'Grundriss Erdgeschoss', 24 * d, 24 * d, { size: 14, d, bold: true, align: 'left' });
+  text(ctx, 'Straße unten. Die Öffnungen der Straßenseite folgen dem Erdgeschoss der Fassade.', 24 * d, 44 * d, { size: 11, d, farbe: '#5C6872', align: 'left' });
+  return T;
+}
+function wandZeichnen(ctx, T, w, i, d) {
+  const X = T.X, Y = T.Y, k = T.k, dick = WD[w.art] || 0.12;
+  const dx = w.x1 - w.x0, dz = w.z1 - w.z0, L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L, nx = -uz * dick / 2, nz = ux * dick / 2;
+  ctx.beginPath();
+  ctx.moveTo(X(w.x0 + nx), Y(w.z0 + nz)); ctx.lineTo(X(w.x1 + nx), Y(w.z1 + nz)); ctx.lineTo(X(w.x1 - nx), Y(w.z1 - nz)); ctx.lineTo(X(w.x0 - nx), Y(w.z0 - nz)); ctx.closePath();
+  ctx.fillStyle = '#2E3A46'; ctx.fill();
+  Z.plan.oeff.filter(o => o.w === i).forEach(o => {
+    const a = clamp(o.t - o.b / 2, 0, L), b = clamp(o.t + o.b / 2, 0, L);
+    const pa = [w.x0 + ux * a, w.z0 + uz * a], pb = [w.x0 + ux * b, w.z0 + uz * b];
+    ctx.beginPath();
+    ctx.moveTo(X(pa[0] + nx * 1.02), Y(pa[1] + nz * 1.02)); ctx.lineTo(X(pb[0] + nx * 1.02), Y(pb[1] + nz * 1.02));
+    ctx.lineTo(X(pb[0] - nx * 1.02), Y(pb[1] - nz * 1.02)); ctx.lineTo(X(pa[0] - nx * 1.02), Y(pa[1] - nz * 1.02)); ctx.closePath();
+    ctx.fillStyle = PAPIER; ctx.fill(); ctx.strokeStyle = TUSCHE; ctx.lineWidth = 0.8 * d; ctx.stroke();
+    if (o.art === 'fenster') {
+      linie(ctx, X(pa[0]), Y(pa[1]), X(pb[0]), Y(pb[1]), TUSCHE, 1.2 * d);
+    } else {
+      const s = o.seite || 1, lx = pa[0] + (-uz) * o.b * s, lz = pa[1] + ux * o.b * s;
+      linie(ctx, X(pa[0]), Y(pa[1]), X(lx), Y(lz), TUSCHE, 1.4 * d);
+      const a0 = Math.atan2(Y(lz) - Y(pa[1]), X(lx) - X(pa[0])), a1 = Math.atan2(Y(pb[1]) - Y(pa[1]), X(pb[0]) - X(pa[0]));
+      let da = a1 - a0; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+      ctx.save(); ctx.setLineDash([3 * d, 3 * d]); ctx.strokeStyle = TUSCHE; ctx.lineWidth = 0.7 * d;
+      ctx.beginPath(); ctx.arc(X(pa[0]), Y(pa[1]), o.b * k, a0, a0 + da, da < 0); ctx.stroke(); ctx.restore();
+    }
+  });
+}
+function moebelSymbol(ctx, T, mb, d, markiert) {
+  ctx.save();
+  ctx.translate(T.X(mb.x), T.Y(mb.z)); ctx.rotate(mb.rot || 0); ctx.scale(T.k, T.k);
+  ctx.lineWidth = 0.85 * d / T.k; ctx.strokeStyle = markiert ? BLAU : '#5E6B77'; ctx.fillStyle = '#FFFFFF';
+  const r = (x, y, w, h, v) => { ctx.beginPath(); ctx.rect(x, y, w, h); if (v !== false) ctx.fill(); ctx.stroke(); };
+  const c = (x, y, rr, v) => { ctx.beginPath(); ctx.arc(x, y, rr, 0, 7); if (v !== false) ctx.fill(); ctx.stroke(); };
+  const l = (a, b, e, f) => { ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(e, f); ctx.stroke(); };
+  const stuhl = (x, y, a) => { ctx.save(); ctx.translate(x, y); ctx.rotate(a); r(-0.21, -0.21, 0.42, 0.42); r(-0.21, -0.21, 0.42, 0.07); ctx.restore(); };
+  switch (mb.typ) {
+    case 'tisch4': stuhl(-0.35, -0.72, 0); stuhl(0.35, -0.72, 0); stuhl(-0.35, 0.72, Math.PI); stuhl(0.35, 0.72, Math.PI); r(-0.7, -0.45, 1.4, 0.9); break;
+    case 'rundtisch': for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; stuhl(Math.sin(a) * 0.78, -Math.cos(a) * 0.78, a); } c(0, 0, 0.5); break;
+    case 'sofa': r(-1.1, -0.45, 2.2, 0.9); r(-1.1, -0.45, 2.2, 0.2); r(-1.1, -0.25, 0.16, 0.7); r(0.94, -0.25, 0.16, 0.7); l(-0.08, -0.25, -0.08, 0.45); l(0.47, -0.25, 0.47, 0.45); l(-0.63, -0.25, -0.63, 0.45); break;
+    case 'sessel': r(-0.42, -0.42, 0.84, 0.84); r(-0.42, -0.42, 0.84, 0.2); r(-0.42, -0.22, 0.14, 0.64); r(0.28, -0.22, 0.14, 0.64); break;
+    case 'bett': r(-0.5, -1.0, 1.0, 2.0); r(-0.38, -0.88, 0.76, 0.34); l(-0.5, -0.4, 0.5, -0.4); l(0.05, -0.4, 0.5, 0.1); break;
+    case 'bett2': r(-0.9, -1.0, 1.8, 2.0); r(-0.78, -0.88, 0.68, 0.34); r(0.1, -0.88, 0.68, 0.34); l(-0.9, -0.4, 0.9, -0.4); l(0.4, -0.4, 0.9, 0.1); break;
+    case 'schrank': r(-0.9, -0.3, 1.8, 0.6); l(-0.85, 0, 0.85, 0); for (let x = -0.7; x < 0.8; x += 0.28) l(x - 0.07, -0.12, x + 0.07, 0.12); break;
+    case 'regal': r(-0.8, -0.18, 1.6, 0.36); for (let x = -0.3; x < 0.8; x += 0.5) l(x, -0.18, x, 0.18); l(-0.8, 0.18, 0.8, -0.18); break;
+    case 'kueche': r(-1.2, -0.3, 2.4, 0.6); l(-1.2, 0.3, 1.2, 0.3); break;
+    case 'herd': r(-0.3, -0.3, 0.6, 0.6); [[-0.14, -0.14], [0.14, -0.14], [-0.14, 0.14], [0.14, 0.14]].forEach(q => c(q[0], q[1], 0.09, false)); break;
+    case 'spuele': r(-0.6, -0.3, 1.2, 0.6); r(-0.5, -0.2, 0.44, 0.4); r(0.06, -0.2, 0.44, 0.4); break;
+    case 'kuehl': r(-0.3, -0.3, 0.6, 0.6); l(-0.3, -0.3, 0.3, 0.3); l(0.3, -0.3, -0.3, 0.3); break;
+    case 'wc': r(-0.2, -0.35, 0.4, 0.18); ctx.beginPath(); ctx.ellipse(0, 0.08, 0.19, 0.26, 0, 0, 7); ctx.fill(); ctx.stroke(); break;
+    case 'wb': r(-0.3, -0.25, 0.6, 0.5); ctx.beginPath(); ctx.ellipse(0, 0.02, 0.21, 0.16, 0, 0, 7); ctx.stroke(); break;
+    case 'dusche': r(-0.45, -0.45, 0.9, 0.9); l(-0.45, -0.45, 0.45, 0.45); l(0.45, -0.45, -0.45, 0.45); c(0, 0, 0.05, false); break;
+    case 'wanne': r(-0.85, -0.38, 1.7, 0.76); ctx.beginPath(); ctx.ellipse(0.05, 0, 0.72, 0.28, 0, 0, 7); ctx.stroke(); break;
+    case 'theke': r(-1.5, -0.35, 3.0, 0.7); r(-1.4, -0.25, 2.8, 0.5, false); break;
+    case 'pflanze': c(0, 0, 0.35); for (let i = 0; i < 8; i++) { const a = Math.PI * i / 4; l(0, 0, Math.cos(a) * 0.33, Math.sin(a) * 0.33); } break;
+    default: r(-0.4, -0.4, 0.8, 0.8);
+  }
+  ctx.restore();
+}
+
+/* ---------- Kennwerte und Prueffragen ---------- */
+function auswerten() {
+  const B = Z.luecke.breite, h = hoehen(), top = h[Z.bau.geschosse];
+  let glas = 0;
+  for (let e = 0; e < Z.bau.geschosse; e++) for (let a = 0; a < Z.bau.achsen; a++) {
+    const r = feldRect(e, a), fw = r.x1 - r.x0, gh = r.y1 - r.y0, typ = Z.felder[e + ',' + a] || 'wand', bru = e === 0 ? 0.3 : 0.9;
+    const f = { fenster: Math.min(1.25, fw * 0.5) * Math.min(gh * 0.55, gh - bru - 0.5), fenster2: 2 * Math.min(0.95, fw * 0.3) * Math.min(gh * 0.55, gh - bru - 0.5),
+      quer: fw * 0.72 * Math.max(0.6, gh * 0.33), band: (fw - 0.1) * Math.max(0.8, gh * 0.38), bogen: Math.min(1.2, fw * 0.48) * Math.min(gh * 0.62, gh - bru - 0.4) * 0.9,
+      franz: Math.min(1.1, fw * 0.42) * gh * 0.78, balkon: Math.min(1.0, fw * 0.36) * Math.min(2.35, gh - 0.4), loggia: fw * 0.8 * gh * 0.9 * 0.5,
+      erker: fw * 0.86 * 0.62 * gh * 0.52, tuer: Math.min(1.25, fw * 0.5) * 2.9, laden: fw * 0.84 * gh * 0.7, tor: Math.min(3.2, fw * 0.88) * 3.6 }[typ] || 0;
+    glas += Math.max(0, f);
+  }
+  const anteil = 100 * glas / (B * (top - Z.bau.sockel));
+  const tr = traufe();
+  const dl = tr - Z.links.traufe, dr = tr - Z.rechts.traufe;
+  const kw = [
+    ['Lückenbreite', m2(B) + ' m'], ['Achsbreite', m2(B / Z.bau.achsen) + ' m'], ['Geschosse', String(Z.bau.geschosse)],
+    ['Traufhöhe', m2(tr) + ' m'], ['Firsthöhe', m2(firstH()) + ' m'],
+    ['Abstand zur Traufe links', (dl >= 0 ? '+' : '') + m2(dl) + ' m'], ['Abstand zur Traufe rechts', (dr >= 0 ? '+' : '') + m2(dr) + ' m'],
+    ['Öffnungsanteil der Fassade', Math.round(anteil) + ' %'],
+    ['Geschossfläche', Math.round(B * Z.luecke.tiefe * Z.bau.geschosse) + ' m²']
+  ];
+  const pr = [];
+  if (Math.abs(dl) < 0.4 || Math.abs(dr) < 0.4) pr.push(['gut', 'Die Traufe schließt an einen Nachbarn an. Beschreibe, wie dadurch die Straßenwand wirkt.']);
+  else pr.push(['', 'Die Traufe weicht von beiden Nachbarn ab. Soll der Neubau sich einfügen oder bewusst absetzen? Begründe.']);
+  const eg = [...Array(Z.bau.achsen).keys()].map(a => Z.felder['0,' + a] || 'wand');
+  if (!eg.some(t => t === 'tuer' || t === 'tor')) pr.push(['', 'Im Erdgeschoss fehlt ein Eingang. Wie betritt man das Haus?']);
+  if (eg.some(t => t === 'laden')) pr.push(['gut', 'Das Erdgeschoss öffnet sich mit Schaufenstern zur Straße. Welche Nutzung passt zu deiner Straße?']);
+  if (anteil > 55) pr.push(['', 'Mehr als die Hälfte der Fassade ist offen. Wirkt der Bau noch als Wand der Straße?']);
+  if (anteil < 18) pr.push(['', 'Die Fassade ist sehr geschlossen. Reicht das Licht für die Räume dahinter?']);
+  if (Z.luecke.front === 'N') pr.push(['', 'Die Straßenfront liegt im Norden. Wohin öffnen sich die Aufenthaltsräume, und wo liegt der Hof?']);
+  const sym = eg.every((t, i) => t === eg[eg.length - 1 - i]);
+  pr.push(['', sym ? 'Das Erdgeschoss ist symmetrisch. Wo liegt die Mitte, und was geschieht dort?' : 'Das Erdgeschoss ist asymmetrisch. Welche Achse ist betont, und warum?']);
+  if (Z.bau.geschosse > Math.max(Z.links.geschosse, Z.rechts.geschosse)) pr.push(['', 'Der Neubau hat mehr Geschosse als beide Nachbarn. Wie reagiert er auf die Höhe der Straße?']);
+  return { kw, pr };
+}
+
+/* ---------- Bedienung ---------- */
+let T_aktuell = null, R = { W: 0, H: 0, d: 1 };
+function zeichne(zielCtx, skala) {
+  const c = document.getElementById('blatt'), r = c.getBoundingClientRect();
+  const d = Math.min(2, window.devicePixelRatio || 1) * (skala || 1);
+  const W = Math.max(320, Math.round(r.width * d)), H = Math.max(240, Math.round(r.height * d));
+  const ctx = zielCtx || c.getContext('2d');
+  if (!zielCtx && (c.width !== W || c.height !== H)) { c.width = W; c.height = H; }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const T = ansicht === 'aufriss' ? zeichneAufriss(ctx, W, H, d) : zeichneGrundriss(ctx, W, H, d);
+  if (!zielCtx) { T_aktuell = T; R = { W, H, d }; if (ziehen && ansicht === 'grundriss') vorschau(ctx, T, d); aktualisiereSeite(); }
+}
+function aktualisiereSeite() {
+  const a = auswerten();
+  const kw = document.getElementById('kennwerte'); kw.innerHTML = '';
+  a.kw.forEach(q => { const dt = document.createElement('dt'); dt.textContent = q[0]; const dd = document.createElement('dd'); dd.textContent = q[1]; kw.appendChild(dt); kw.appendChild(dd); });
+  const pr = document.getElementById('pruef'); pr.innerHTML = '';
+  a.pr.forEach(q => { const li = document.createElement('li'); li.textContent = q[1]; if (q[0]) li.className = q[0]; pr.appendChild(li); });
+  document.getElementById('hinweis').textContent = ansicht === 'aufriss'
+    ? 'Modul „' + (MODULE.find(q => q[0] === modulWahl) || ['', ''])[1] + '“ gewählt. Tippe ein Feld der Fassade an. Ein zweiter Tipp macht es wieder zur Wand.'
+    : { 'wand-aussen': 'Ziehe eine Außenwand. Sie rastet auf dem 25-cm-Raster ein.', 'wand-innen': 'Ziehe eine Innenwand. Sie rastet auf dem 25-cm-Raster ein.',
+      fenster: 'Tippe auf eine Wand, um ein Fenster einzusetzen.', tuer: 'Tippe auf eine Wand, um eine Tür einzusetzen. Ein zweiter Tipp dreht den Aufschlag.',
+      treppe: 'Ziehe die Treppe als Rechteck auf. Der Pfeil zeigt die Laufrichtung.', moebel: 'Tippe in den Grundriss, um das gewählte Möbel einzusetzen.',
+      raum: 'Tippe in einen Raum, um ihn zu benennen.', auswahl: 'Tippe ein Möbel an, um es um 90 Grad zu drehen.', radierer: 'Tippe ein Element an, um es zu löschen.' }[werkzeug];
+}
+function zuWelt(e) {
+  const c = document.getElementById('blatt'), r = c.getBoundingClientRect();
+  const px = (e.clientX - r.left) * R.d, py = (e.clientY - r.top) * R.d, T = T_aktuell;
+  return { x: (px - T.X(0)) / T.k, y: (T.Y(0) - py) / T.k, px, py };
+}
+const raste = (v) => Math.round(v * 4) / 4;
+let ziehen = null;
+function vorschau(ctx, T, d) {
+  const a = ziehen.a, b = ziehen.b;
+  ctx.save(); ctx.strokeStyle = BLAU; ctx.lineWidth = 2 * d; ctx.setLineDash([6 * d, 4 * d]);
+  if (werkzeug === 'treppe') ctx.strokeRect(T.X(Math.min(a.x, b.x)), T.Y(Math.max(a.y, b.y)), Math.abs(b.x - a.x) * T.k, Math.abs(b.y - a.y) * T.k);
+  else { ctx.beginPath(); ctx.moveTo(T.X(a.x), T.Y(a.y)); ctx.lineTo(T.X(b.x), T.Y(b.y)); ctx.stroke(); text(ctx, m2(Math.hypot(b.x - a.x, b.y - a.y)) + ' m', T.X((a.x + b.x) / 2), T.Y((a.y + b.y) / 2) - 12 * d, { size: 11, d, farbe: BLAU, bg: 'rgba(251,250,247,.9)' }); }
+  ctx.restore();
+}
+function naechsteWand(p) {
+  let best = -1, bd = 0.7, bt = 0;
+  Z.plan.waende.forEach((w, i) => {
+    const dx = w.x1 - w.x0, dz = w.z1 - w.z0, L2 = dx * dx + dz * dz || 1;
+    const t = clamp(((p.x - w.x0) * dx + (p.y - w.z0) * dz) / L2, 0, 1);
+    const dd = Math.hypot(w.x0 + dx * t - p.x, w.z0 + dz * t - p.y);
+    if (dd < bd) { bd = dd; best = i; bt = t * Math.sqrt(L2); }
+  });
+  return best < 0 ? null : { i: best, t: raste(bt) };
+}
+function binde() {
+  const c = document.getElementById('blatt');
+  c.addEventListener('pointerdown', e => {
+    const p = zuWelt(e);
+    if (ansicht === 'aufriss') {
+      for (let ee = 0; ee < Z.bau.geschosse; ee++) for (let a = 0; a < Z.bau.achsen; a++) {
+        const r = feldRect(ee, a);
+        if (p.x >= r.x0 && p.x < r.x1 && p.y >= r.y0 && p.y < r.y1) {
+          merken(); const key = ee + ',' + a;
+          Z.felder[key] = (Z.felder[key] === modulWahl) ? 'wand' : modulWahl; zeichne(); return;
+        }
+      }
+      return;
+    }
+    const q = { x: raste(p.x), y: raste(p.y) };
+    if (werkzeug === 'wand-aussen' || werkzeug === 'wand-innen' || werkzeug === 'treppe') { ziehen = { a: q, b: q }; c.setPointerCapture(e.pointerId); return; }
+    if (werkzeug === 'fenster' || werkzeug === 'tuer') {
+      const nw = naechsteWand(p); if (!nw) return;
+      const vorh = Z.plan.oeff.find(o => o.w === nw.i && Math.abs(o.t - nw.t) < 0.5);
+      merken();
+      if (vorh && vorh.art === 'tuer' && werkzeug === 'tuer') vorh.seite = -(vorh.seite || 1);
+      else Z.plan.oeff.push({ w: nw.i, t: nw.t, b: werkzeug === 'tuer' ? 0.9 : 1.2, art: werkzeug, seite: 1 });
+      zeichne(); return;
+    }
+    if (werkzeug === 'moebel') { merken(); Z.plan.moebel.push({ typ: moebelWahl, x: q.x, z: q.y, rot: 0 }); letzterMoebel = Z.plan.moebel.length - 1; zeichne(); return; }
+    if (werkzeug === 'raum') { const n = prompt('Name des Raums, zum Beispiel Wohnen, Küche, Laden:'); if (n) { merken(); Z.plan.raeume.push({ name: n.slice(0, 24), x: q.x, z: q.y }); zeichne(); } return; }
+    if (werkzeug === 'auswahl') {
+      const i = Z.plan.moebel.findIndex(m => Math.hypot(m.x - p.x, m.z - p.y) < 0.9);
+      if (i >= 0) { merken(); Z.plan.moebel[i].rot = ((Z.plan.moebel[i].rot || 0) + Math.PI / 2) % (2 * Math.PI); letzterMoebel = i; zeichne(); }
+      return;
+    }
+    if (werkzeug === 'radierer') {
+      merken();
+      const nw = naechsteWand(p);
+      const oi = nw ? Z.plan.oeff.findIndex(o => o.w === nw.i && Math.abs(o.t - nw.t) < 0.7) : -1;
+      if (oi >= 0) { Z.plan.oeff.splice(oi, 1); zeichne(); return; }
+      const mi = Z.plan.moebel.findIndex(m => Math.hypot(m.x - p.x, m.z - p.y) < 0.8);
+      if (mi >= 0) { Z.plan.moebel.splice(mi, 1); zeichne(); return; }
+      const ri = Z.plan.raeume.findIndex(r => Math.hypot(r.x - p.x, r.z - p.y) < 0.8);
+      if (ri >= 0) { Z.plan.raeume.splice(ri, 1); zeichne(); return; }
+      const ti = Z.plan.treppen.findIndex(t => p.x > Math.min(t.x0, t.x1) && p.x < Math.max(t.x0, t.x1) && p.y > Math.min(t.z0, t.z1) && p.y < Math.max(t.z0, t.z1));
+      if (ti >= 0) { Z.plan.treppen.splice(ti, 1); zeichne(); return; }
+      if (nw) { Z.plan.waende.splice(nw.i, 1); Z.plan.oeff = Z.plan.oeff.filter(o => o.w !== nw.i).map(o => ({ ...o, w: o.w > nw.i ? o.w - 1 : o.w })); zeichne(); return; }
+      verlauf.pop();
+    }
+  });
+  c.addEventListener('pointermove', e => {
+    if (!ziehen) return;
+    const p = zuWelt(e); let b = { x: raste(p.x), y: raste(p.y) };
+    if (werkzeug !== 'treppe') { if (Math.abs(b.x - ziehen.a.x) > Math.abs(b.y - ziehen.a.y)) b.y = ziehen.a.y; else b.x = ziehen.a.x; }
+    ziehen.b = b; zeichne();
+  });
+  c.addEventListener('pointerup', () => {
+    if (!ziehen) return;
+    const a = ziehen.a, b = ziehen.b; ziehen = null;
+    if (Math.hypot(b.x - a.x, b.y - a.y) >= 0.5) {
+      merken();
+      if (werkzeug === 'treppe') Z.plan.treppen.push({ x0: a.x, z0: a.y, x1: b.x, z1: b.y });
+      else Z.plan.waende.push({ x0: a.x, z0: a.y, x1: b.x, z1: b.y, art: werkzeug === 'wand-aussen' ? 'aussen' : 'innen' });
+    }
+    zeichne();
+  });
+  window.addEventListener('resize', () => zeichne());
+}
+
+/* ---------- Bedienfeld links ---------- */
+const REGLER = [
+  ['Baulücke', [
+    ['luecke.breite', 'Breite der Lücke', 4, 20, 0.25, ' m'], ['luecke.tiefe', 'Tiefe der Lücke', 6, 20, 0.5, ' m'],
+    ['luecke.front', 'Straßenfront zeigt nach', [['N', 'Norden'], ['O', 'Osten'], ['S', 'Süden'], ['W', 'Westen']]]
+  ]],
+  ['Nachbar links', [
+    ['links.geschosse', 'Geschosse', 1, 7, 1, ''], ['links.traufe', 'Traufhöhe', 3, 24, 0.1, ' m'], ['links.first', 'Firsthöhe', 3, 28, 0.1, ' m'],
+    ['links.dach', 'Dach', [['sattel', 'geneigt'], ['flach', 'flach']]]
+  ]],
+  ['Nachbar rechts', [
+    ['rechts.geschosse', 'Geschosse', 1, 7, 1, ''], ['rechts.traufe', 'Traufhöhe', 3, 24, 0.1, ' m'], ['rechts.first', 'Firsthöhe', 3, 28, 0.1, ' m'],
+    ['rechts.dach', 'Dach', [['sattel', 'geneigt'], ['flach', 'flach']]]
+  ]],
+  ['Neubau', [
+    ['bau.geschosse', 'Geschosse', 1, 7, 1, ''], ['bau.achsen', 'Fensterachsen', 1, 7, 1, ''],
+    ['bau.egH', 'Höhe Erdgeschoss', 2.6, 5.0, 0.1, ' m'], ['bau.ogH', 'Höhe Obergeschosse', 2.6, 4.2, 0.1, ' m'], ['bau.sockel', 'Sockel', 0, 1.2, 0.05, ' m'],
+    ['bau.dach', 'Dach', [['flach', 'Flachdach mit Attika'], ['sattel', 'geneigt, traufständig'], ['mansard', 'Mansarddach']]],
+    ['bau.dachH', 'Dachhöhe', 1.5, 7, 0.1, ' m'],
+    ['bau.material', 'Material', [['putz', 'Putz'], ['klinker', 'Klinker'], ['beton', 'Sichtbeton'], ['holz', 'Holz'], ['glas', 'Glas mit Raster']]],
+    ['bau.farbe', 'Farbe der Wand', 'farbe'], ['bau.werk', 'Farbe der Gliederung', 'farbe'],
+    ['bau.gesims', 'Gesimse zwischen den Geschossen', 'check'], ['bau.sockelBand', 'Sockel absetzen', 'check']
+  ]]
+];
+const lies = (pfad) => pfad.split('.').reduce((o, k) => o[k], Z);
+const setze = (pfad, v) => { const t = pfad.split('.'); t.slice(0, -1).reduce((o, k) => o[k], Z)[t[t.length - 1]] = v; };
+function el(tag, attr, kinder) {
+  const n = document.createElement(tag);
+  Object.entries(attr || {}).forEach(([k, v]) => { if (k === 'text') n.textContent = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v); });
+  (kinder || []).forEach(c => n.appendChild(c)); return n;
+}
+function baueLinks() {
+  const host = document.getElementById('links'); host.innerHTML = '';
+  REGLER.forEach((gr, gi) => {
+    const det = el('details', gi === 0 || gi === 3 ? { open: 'open' } : {});
+    det.appendChild(el('summary', { text: gr[0] }));
+    gr[1].forEach(f => {
+      const [pfad, name, a] = f, id = 'r_' + pfad.replace('.', '_'), zeile = el('div', { class: 'feld' });
+      if (Array.isArray(a)) {
+        zeile.appendChild(el('label', { for: id, text: name }));
+        const s = el('select', { id }); a.forEach(o => { const op = el('option', { value: o[0], text: o[1] }); if (lies(pfad) === o[0]) op.selected = true; s.appendChild(op); });
+        s.addEventListener('change', () => { merken(); setze(pfad, s.value); zeichne(); }); zeile.appendChild(s);
+      } else if (a === 'farbe') {
+        zeile.appendChild(el('label', { for: id, text: name }));
+        const i = el('input', { type: 'color', id, value: lies(pfad) }); i.addEventListener('input', () => { setze(pfad, i.value); zeichne(); }); zeile.appendChild(i);
+      } else if (a === 'check') {
+        zeile.className = 'feld feld-check';
+        const i = el('input', { type: 'checkbox', id }); i.checked = !!lies(pfad); i.addEventListener('change', () => { merken(); setze(pfad, i.checked); zeichne(); });
+        zeile.appendChild(i); zeile.appendChild(el('label', { for: id, text: name }));
+      } else {
+        const [, , min, max, step, e] = f;
+        const w = el('span', { class: 'wert', text: String(lies(pfad)).replace('.', ',') + e });
+        zeile.appendChild(el('div', { class: 'feld-kopf' }, [el('label', { for: id, text: name }), w]));
+        const i = el('input', { type: 'range', id, min, max, step, value: lies(pfad) });
+        i.addEventListener('pointerdown', merken);
+        i.addEventListener('input', () => {
+          const v = parseFloat(i.value); setze(pfad, v); w.textContent = String(v).replace('.', ',') + e;
+          if (pfad === 'luecke.breite' || pfad === 'luecke.tiefe') anpassenPlan();
+          zeichne();
+        });
+        zeile.appendChild(i);
+      }
+      det.appendChild(zeile);
+    });
+    host.appendChild(det);
+  });
+  host.appendChild(el('p', { class: 'gruppe-titel', text: ansicht === 'aufriss' ? 'Baukasten der Fassade' : 'Werkzeuge des Grundrisses' }));
+  const kasten = el('div', { class: 'kasten' });
+  const liste = ansicht === 'aufriss' ? MODULE : WERKZEUGE;
+  liste.forEach(q => {
+    const b = el('button', { type: 'button', class: 'modul' + ((ansicht === 'aufriss' ? modulWahl : werkzeug) === q[0] ? ' aktiv' : '') });
+    const cv = el('canvas', { width: 104, height: 104 }); b.appendChild(cv); b.appendChild(el('span', { text: q[1] }));
+    ansicht === 'aufriss' ? symbolModul(cv, q[0]) : symbolWerkzeug(cv, q[0]);
+    b.addEventListener('click', () => { if (ansicht === 'aufriss') modulWahl = q[0]; else werkzeug = q[0]; baueLinks(); zeichne(); });
+    kasten.appendChild(b);
+  });
+  host.appendChild(kasten);
+  if (ansicht === 'grundriss') {
+    host.appendChild(el('p', { class: 'gruppe-titel', text: 'Möbel' }));
+    const mk = el('div', { class: 'kasten' });
+    MOEBEL.forEach(q => {
+      const b = el('button', { type: 'button', class: 'modul' + (werkzeug === 'moebel' && moebelWahl === q[0] ? ' aktiv' : '') });
+      const cv = el('canvas', { width: 104, height: 104 }); b.appendChild(cv); b.appendChild(el('span', { text: q[1] }));
+      const x = cv.getContext('2d'); x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, 104, 104);
+      moebelSymbol(x, { k: 34, X: () => 52, Y: () => 52 }, { typ: q[0], x: 0, z: 0, rot: 0 }, 2, false);
+      b.addEventListener('click', () => { werkzeug = 'moebel'; moebelWahl = q[0]; baueLinks(); zeichne(); });
+      mk.appendChild(b);
+    });
+    host.appendChild(mk);
+    host.appendChild(el('button', { type: 'button', class: 'modul', style: 'width:100%;padding:.45rem', text: 'Grundriss leeren', onclick: () => { if (confirm('Alle selbst gezeichneten Wände, Öffnungen, Treppen und Möbel löschen?')) { merken(); Z.plan = { waende: [], oeff: [], treppen: [], moebel: [], raeume: [] }; standardPlan(); zeichne(); } } }));
+  }
+}
+function anpassenPlan() { const w = Z.plan.waende[0]; if (w && w.art === 'aussen' && w.x0 === 0) { w.z0 = w.z1 = Z.luecke.tiefe; w.x1 = Z.luecke.breite; } }
+function symbolModul(cv, typ) {
+  const x = cv.getContext('2d'); x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, 104, 104);
+  const T = { k: 30, X: (v) => 52 + 30 * (v - 1.5), Y: (v) => 96 - 30 * v };
+  rechteck(x, T.X(0), T.Y(3), 90, 90, '#EDE8DC', null);
+  zeichneModul(x, typ, { x0: 0, x1: 3, y0: 0.1, y1: 3.1 }, T, { werk: '#F7F4EC', farbe: '#E3DCCB' }, 2, false);
+}
+function symbolWerkzeug(cv, typ) {
+  const x = cv.getContext('2d'); x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, 104, 104); x.fillStyle = '#2E3A46'; x.strokeStyle = TUSCHE; x.lineWidth = 2;
+  if (typ === 'wand-aussen') x.fillRect(14, 44, 76, 16);
+  else if (typ === 'wand-innen') x.fillRect(14, 49, 76, 6);
+  else if (typ === 'fenster') { x.fillRect(14, 44, 76, 16); x.fillStyle = PAPIER; x.fillRect(32, 44, 40, 16); x.strokeRect(32, 44, 40, 16); x.beginPath(); x.moveTo(32, 52); x.lineTo(72, 52); x.stroke(); }
+  else if (typ === 'tuer') { x.fillRect(14, 62, 76, 12); x.fillStyle = PAPIER; x.fillRect(34, 62, 36, 12); x.beginPath(); x.moveTo(34, 62); x.lineTo(34, 26); x.stroke(); x.setLineDash([4, 4]); x.beginPath(); x.arc(34, 62, 36, -Math.PI / 2, 0); x.stroke(); }
+  else if (typ === 'treppe') { x.strokeRect(28, 16, 48, 72); for (let y = 24; y < 88; y += 8) { x.beginPath(); x.moveTo(28, y); x.lineTo(76, y); x.stroke(); } }
+  else if (typ === 'moebel') { x.strokeRect(26, 34, 52, 36); }
+  else if (typ === 'raum') { x.font = '600 26px system-ui'; x.textAlign = 'center'; x.fillStyle = TUSCHE; x.fillText('Abc', 52, 62); }
+  else if (typ === 'auswahl') { x.beginPath(); x.arc(52, 52, 26, -2.4, 1.2); x.stroke(); x.beginPath(); x.moveTo(62, 76); x.lineTo(70, 70); x.lineTo(60, 66); x.fill(); }
+  else if (typ === 'radierer') { x.beginPath(); x.moveTo(28, 28); x.lineTo(76, 76); x.moveTo(76, 28); x.lineTo(28, 76); x.lineWidth = 5; x.strokeStyle = ROT; x.stroke(); }
+}
+
+/* ---------- Start ---------- */
+function init() {
+  baueLinks(); binde();
+  document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
+    ansicht = b.dataset.ansicht;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('aktiv', t === b));
+    baueLinks(); zeichne();
+  }));
+  document.getElementById('btnZurueck').addEventListener('click', () => { if (verlauf.length) { Z = JSON.parse(verlauf.pop()); baueLinks(); zeichne(); } });
+  document.getElementById('btnBild').addEventListener('click', () => {
+    const c = document.getElementById('blatt'), r = c.getBoundingClientRect(), s = 3, d = Math.min(2, window.devicePixelRatio || 1) * s;
+    const off = document.createElement('canvas'); off.width = Math.round(r.width * d); off.height = Math.round(r.height * d);
+    zeichne(off.getContext('2d'), s);
+    const a = document.createElement('a'); a.download = 'Baulücke_' + (ansicht === 'aufriss' ? 'Aufriss' : 'Grundriss') + '.png'; a.href = off.toDataURL('image/png');
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+  document.getElementById('btnCode').addEventListener('click', () => {
+    document.getElementById('code').value = btoa(unescape(encodeURIComponent(JSON.stringify(Z))));
+    document.getElementById('codeMeldung').textContent = ''; document.getElementById('dlgCode').hidden = false;
+  });
+  document.getElementById('btnKopieren').addEventListener('click', () => {
+    const t = document.getElementById('code'); t.select();
+    try { document.execCommand('copy'); document.getElementById('codeMeldung').textContent = 'Code kopiert.'; } catch (e) { document.getElementById('codeMeldung').textContent = 'Bitte den Code von Hand markieren und kopieren.'; }
+  });
+  document.getElementById('btnLaden').addEventListener('click', () => {
+    try { merken(); Z = JSON.parse(decodeURIComponent(escape(atob(document.getElementById('code').value.trim())))); baueLinks(); zeichne(); document.getElementById('codeMeldung').textContent = 'Entwurf geladen.'; }
+    catch (e) { verlauf.pop(); document.getElementById('codeMeldung').textContent = 'Dieser Code lässt sich nicht lesen. Bitte den vollständigen Code einfügen.'; }
+  });
+  document.getElementById('btnCodeZu').addEventListener('click', () => document.getElementById('dlgCode').hidden = true);
+  document.getElementById('btnHilfe').addEventListener('click', () => document.getElementById('dlgHilfe').hidden = false);
+  document.getElementById('btnHilfeZu').addEventListener('click', () => document.getElementById('dlgHilfe').hidden = true);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { document.getElementById('dlgCode').hidden = true; document.getElementById('dlgHilfe').hidden = true; }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); document.getElementById('btnZurueck').click(); }
+  });
+  zeichne();
+}
+if (typeof document !== 'undefined' && document.getElementById) {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+}
+if (typeof module !== 'undefined') module.exports = { zeichneAufriss, zeichneGrundriss, auswerten, Z: () => Z, setZ: (v) => { Z = v; } };
+</script>
+</body>
+</html>
